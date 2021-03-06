@@ -1,3 +1,6 @@
 ﻿/PDFTTS/bin/Debug
 /PDFTTS/obj/Debug
 /.vs/desk-pdf-to-tts/v16
+/PDFTTS/bin/Release
+/PDFTTS/obj/Release
+/packages

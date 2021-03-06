@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Speech.Synthesis;
+using System.Threading.Tasks;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
@@ -9,11 +10,15 @@ namespace PDFTTS
 {
     class Program
     {
+        private static bool _isReading = false;
+
         static void Main(string[] args)
         {
             try
             {
                 SpeechSynthesizer speech = new SpeechSynthesizer();
+                speech.SpeakStarted += Speech_SpeakStarted;
+                speech.SpeakCompleted += Speech_SpeakCompleted;
 
                 // Configurações Voz
                 var voices = speech.GetInstalledVoices();
@@ -21,9 +26,7 @@ namespace PDFTTS
                 Console.WriteLine("Vozes instaladas no sistema.");
                 Console.WriteLine("ID\tNome\tIdioma");
                 for (int i = 0; i < voices.Count; i++)
-                {
                     Console.WriteLine($"{i}\t{voices[i].VoiceInfo.Name}\t({voices[i].VoiceInfo.Culture})");
-                }
 
                 Console.Write("Digite o ID para escolher a voz: ");
                 int.TryParse(Console.ReadLine(), out int voiceId);
@@ -101,7 +104,27 @@ namespace PDFTTS
                     Console.WriteLine(text);
                     Console.WriteLine(new string('-', 20));
 
-                    ReadText(text, speech);
+                    Task t = new Task(() => ReadText(text, speech));
+                    t.Start();
+
+                    do
+                    {
+                        if(Console.ReadKey().Key == ConsoleKey.Spacebar)
+                        {
+                            if(speech.State == SynthesizerState.Speaking)
+                            {
+                                speech.Pause();
+                                Console.WriteLine("Pausado.");
+                            }
+                            else
+                            {
+                                speech.Resume();
+                                Console.WriteLine("Retomando.");
+                            }
+                        }
+
+                    } while (_isReading);
+
                     curPage++;
                 }
                 while (curPage <= pageEnd);
@@ -113,6 +136,16 @@ namespace PDFTTS
                 Console.ReadLine();
             }
 
+        }
+
+        private static void Speech_SpeakStarted(object sender, SpeakStartedEventArgs e)
+        {
+            _isReading = true;
+        }
+
+        private static void Speech_SpeakCompleted(object sender, SpeakCompletedEventArgs e)
+        {
+            _isReading = false;
         }
 
         public static void ReadText(string text, SpeechSynthesizer speech)
