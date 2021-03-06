@@ -84,6 +84,7 @@ namespace PDFTTS
 
                 Console.WriteLine(new string('-', 20));
                 Console.WriteLine("Iniciando a leitura.");
+                Console.WriteLine("Pressione ESPAÇO para pausar/retomar à qualquer momento.");
 
                 // Itera e lê as páginas.
                 int curPage = pageStart;
