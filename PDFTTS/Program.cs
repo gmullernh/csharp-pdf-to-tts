@@ -10,17 +10,25 @@ namespace PDFTTS
 {
     class Program
     {
-        private static bool _isReading = false;
+        private static bool _hasFinishedPage = true;
 
         static void Main(string[] args)
         {
             try
             {
                 SpeechSynthesizer speech = new SpeechSynthesizer();
-                speech.SpeakStarted += Speech_SpeakStarted;
-                speech.SpeakCompleted += Speech_SpeakCompleted;
+
+                // Recupera o Ctrl + C e faz dispose do objeto do TTS.
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    Console.WriteLine("Encerrando.");
+                    speech.Pause();
+                    speech.Dispose();
+                    Environment.Exit(0);
+                };
 
                 // Configurações Voz
+
                 var voices = speech.GetInstalledVoices();
 
                 Console.WriteLine("Vozes instaladas no sistema.");
@@ -100,19 +108,18 @@ namespace PDFTTS
                     }
 
                     string text = ExtractTextFromPdf(page);
-                    Console.WriteLine(new string('-', 20));
                     Console.WriteLine($"Página: {curPage}");
                     Console.WriteLine(text);
                     Console.WriteLine(new string('-', 20));
 
-                    Task t = new Task(() => ReadText(text, speech));
-                    t.Start();
+                    new Task(() => ReadText(text, speech)).Start();
 
                     do
                     {
-                        if(Console.ReadKey().Key == ConsoleKey.Spacebar)
+                        if (Console.KeyAvailable 
+                            && Console.ReadKey().Key == ConsoleKey.Spacebar)
                         {
-                            if(speech.State == SynthesizerState.Speaking)
+                            if (speech.State == SynthesizerState.Speaking)
                             {
                                 speech.Pause();
                                 Console.WriteLine("Pausado.");
@@ -124,7 +131,7 @@ namespace PDFTTS
                             }
                         }
 
-                    } while (_isReading);
+                    } while (!_hasFinishedPage);
 
                     curPage++;
                 }
@@ -139,19 +146,11 @@ namespace PDFTTS
 
         }
 
-        private static void Speech_SpeakStarted(object sender, SpeakStartedEventArgs e)
-        {
-            _isReading = true;
-        }
-
-        private static void Speech_SpeakCompleted(object sender, SpeakCompletedEventArgs e)
-        {
-            _isReading = false;
-        }
-
         public static void ReadText(string text, SpeechSynthesizer speech)
         {
+            _hasFinishedPage = false;
             speech.Speak(text);
+            _hasFinishedPage = true;
         }
 
         public static string ExtractTextFromPdf(PdfPage page)
