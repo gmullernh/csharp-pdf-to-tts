@@ -49,7 +49,7 @@ namespace PDFTTS
 
                 Console.WriteLine(new string('-', 20));
 
-                Console.Write("Volume (0 até 200): ");
+                Console.Write("Volume (0 até 100): ");
                 int.TryParse(Console.ReadLine(), out int volume);
                 Console.WriteLine($"Volume selecionado: {volume}");
 
